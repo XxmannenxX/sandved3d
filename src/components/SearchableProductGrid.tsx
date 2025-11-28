@@ -31,7 +31,7 @@ export default function SearchableProductGrid({ products }: { products: Product[
     show: { opacity: 1, y: 0 },
   }
 
-  const baseTransition = { duration: 0.45, ease: 'easeOut' }
+  const baseTransition = { duration: 0.45, ease: [0.4, 0, 0.2, 1] as const }
 
   const getCustomizationLabel = (product: Product) => {
     if (!product.is_customizable) return null;

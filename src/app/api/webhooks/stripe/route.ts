@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         stripe_session_id: session.id,
         amount_total: (session.amount_total || 0) / 100,
         status: 'paid',
-        shipping_details: session.shipping_details as any,
+        shipping_details: (session as any).shipping_details || null,
       })
       .select()
       .single()
