@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import { Package, LogOut, Settings, TrendingUp, DollarSign, Clock } from 'lucide-react'
 import OrderStatusSelector from '@/components/OrderStatusSelector'
+import { sendCustomerOrderStatusUpdateEmail } from '@/lib/email/resend'
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
@@ -23,19 +24,31 @@ export default async function AdminDashboard() {
     "use server"
     
     const supabase = await createClient()
-    await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
+    const { data: existing } = await supabase.from('orders').select('status').eq('id', orderId).single()
+    const previousStatus = existing?.status || null
+
+    if (previousStatus === newStatus) {
+      revalidatePath('/admin')
+      return
+    }
+
+    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
+
+    // Best-effort: notify customer about status update (email failures shouldn't break admin UX)
+    try {
+      await sendCustomerOrderStatusUpdateEmail(orderId, newStatus)
+    } catch (e) {
+      console.error('Failed to send order status update email:', e)
+    }
     
     revalidatePath('/admin')
   }
 
   const activeOrders = orders?.filter(
-    (order) => order.status !== 'completed' && order.status !== 'refunded'
+    (order) => order.status !== 'completed' && order.status !== 'cancelled'
   ) || []
   const completedOrders = orders?.filter(
-    (order) => order.status === 'completed' || order.status === 'refunded'
+    (order) => order.status === 'completed' || order.status === 'cancelled'
   ) || []
 
   const activeOrderCount = activeOrders.length
@@ -179,7 +192,10 @@ export default async function AdminDashboard() {
                       <OrderStatusSelector order={order} onUpdate={updateOrderStatus} />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{order.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.customer_name ? `${order.customer_name} · ` : ''}
+                        {order.email}
+                      </p>
                       <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                         {new Date(order.created_at!).toLocaleDateString()} ·{' '}
                         {new Date(order.created_at!).toLocaleTimeString()}
@@ -226,7 +242,10 @@ export default async function AdminDashboard() {
                     <p className="text-base font-bold text-foreground">
                       Ordre #{order.id.slice(0, 8)}
                     </p>
-                    <p className="text-sm text-muted-foreground">{order.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.customer_name ? `${order.customer_name} · ` : ''}
+                      {order.email}
+                    </p>
                     <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                       {new Date(order.created_at!).toLocaleDateString()} ·{' '}
                       {new Date(order.created_at!).toLocaleTimeString()}

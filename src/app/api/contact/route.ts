@@ -3,10 +3,14 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const resendFrom = process.env.RESEND_FROM
 
 export async function POST(request: Request) {
   try {
     const { name, email, description } = await request.json()
+    if (!resendFrom) {
+      return NextResponse.json({ error: 'Missing RESEND_FROM' }, { status: 500 })
+    }
 
     // Fetch email from Supabase settings
     const supabase = await createClient()
@@ -19,7 +23,7 @@ export async function POST(request: Request) {
     const recipientEmail = settings?.value || 'markus.lundevik@gmail.com'
 
     const { data, error } = await resend.emails.send({
-      from: 'Andreas 3D <onboarding@resend.dev>',
+      from: resendFrom,
       to: [recipientEmail], 
       subject: `New Custom Request from ${name}`,
       text: `

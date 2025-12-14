@@ -60,35 +60,36 @@ export type Database = {
         Row: {
           amount_total: number | null
           created_at: string | null
+          customer_name: string | null
           email: string
           id: string
           shipping_details: Json | null
           status: string | null
-          stripe_session_id: string | null
         }
         Insert: {
           amount_total?: number | null
           created_at?: string | null
+          customer_name?: string | null
           email: string
           id?: string
           shipping_details?: Json | null
           status?: string | null
-          stripe_session_id?: string | null
         }
         Update: {
           amount_total?: number | null
           created_at?: string | null
+          customer_name?: string | null
           email?: string
           id?: string
           shipping_details?: Json | null
           status?: string | null
-          stripe_session_id?: string | null
         }
         Relationships: []
       }
       products: {
         Row: {
           base_price: number
+          category_slug: string | null
           created_at: string | null
           customization_config: Json | null
           description: string | null
@@ -96,9 +97,11 @@ export type Database = {
           images: string[] | null
           is_customizable: boolean | null
           name: string
+          type_slug: string | null
         }
         Insert: {
           base_price: number
+          category_slug?: string | null
           created_at?: string | null
           customization_config?: Json | null
           description?: string | null
@@ -106,9 +109,11 @@ export type Database = {
           images?: string[] | null
           is_customizable?: boolean | null
           name: string
+          type_slug?: string | null
         }
         Update: {
           base_price?: number
+          category_slug?: string | null
           created_at?: string | null
           customization_config?: Json | null
           description?: string | null
@@ -116,6 +121,7 @@ export type Database = {
           images?: string[] | null
           is_customizable?: boolean | null
           name?: string
+          type_slug?: string | null
         }
         Relationships: []
       }

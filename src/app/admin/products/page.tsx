@@ -17,6 +17,8 @@ export default function ProductsPage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
+  const [categorySlug, setCategorySlug] = useState('')
+  const [typeSlug, setTypeSlug] = useState('')
   const [isCustomizable, setIsCustomizable] = useState(false)
   const [allowText, setAllowText] = useState(false)
   const [allowImage, setAllowImage] = useState(false)
@@ -50,6 +52,8 @@ export default function ProductsPage() {
     setName('')
     setDescription('')
     setPrice('')
+    setCategorySlug('')
+    setTypeSlug('')
     setIsCustomizable(false)
     setAllowText(false)
     setAllowImage(false)
@@ -62,6 +66,8 @@ export default function ProductsPage() {
     setName(product.name)
     setDescription(product.description || '')
     setPrice(product.base_price.toString())
+    setCategorySlug(product.category_slug || '')
+    setTypeSlug(product.type_slug || '')
     setIsCustomizable(product.is_customizable || false)
     const config = product.customization_config as any || {}
     setAllowText(config.allow_text || false)
@@ -136,6 +142,8 @@ export default function ProductsPage() {
             name,
             description,
             base_price: parseFloat(price),
+            category_slug: categorySlug.trim() ? categorySlug.trim() : null,
+            type_slug: typeSlug.trim() ? typeSlug.trim() : null,
             is_customizable: isCustomizable,
             customization_config: isCustomizable ? {
                 allow_text: allowText,
@@ -232,6 +240,20 @@ export default function ProductsPage() {
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {product.description || 'Ingen beskrivelse gitt ennå.'}
           </p>
+          {(product.category_slug || product.type_slug) && (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {product.category_slug && (
+                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+                  {product.category_slug}
+                </span>
+              )}
+              {product.type_slug && (
+                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+                  {product.type_slug}
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2 mt-1">
             {customLabel && (
               <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
@@ -333,6 +355,32 @@ export default function ProductsPage() {
                           required 
                           className="block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
                         />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">Kategori slug</label>
+                            <input
+                              type="text"
+                              value={categorySlug}
+                              onChange={e => setCategorySlug(e.target.value)}
+                              placeholder="f.eks. keychains"
+                              className="block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
+                            />
+                            <p className="text-[11px] text-muted-foreground mt-1">Bruk små bokstaver og bindestrek.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">Type slug</label>
+                            <input
+                              type="text"
+                              value={typeSlug}
+                              onChange={e => setTypeSlug(e.target.value)}
+                              placeholder="f.eks. classic"
+                              className="block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
+                            />
+                            <p className="text-[11px] text-muted-foreground mt-1">Bruk små bokstaver og bindestrek.</p>
+                        </div>
                     </div>
                     
                     <div>

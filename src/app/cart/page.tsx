@@ -2,13 +2,15 @@
 
 import { useCartStore } from '@/store/cart'
 import Link from 'next/link'
-import { Trash2, ShoppingBag, ArrowRight, CreditCard } from 'lucide-react'
+import { Trash2, ShoppingBag, ArrowRight, Send } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function CartPage() {
   const { items, removeItem } = useCartStore()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
 
   useEffect(() => {
     setMounted(true)
@@ -19,23 +21,36 @@ export default function CartPage() {
   const handleCheckout = async () => {
     setLoading(true)
     try {
+      if (!customerName.trim()) throw new Error('Vennligst fyll inn navn')
+      if (!customerEmail.trim() || !customerEmail.includes('@')) throw new Error('Vennligst fyll inn en gyldig e-post')
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          items,
+          customer: {
+            name: customerName,
+            email: customerEmail,
+          },
+        }),
       })
 
-      if (!response.ok) throw new Error('Checkout failed')
-
-      const { url } = await response.json()
+      const payload = await response.json().catch(() => ({} as any))
+      const orderId = payload?.orderId
+      const error = payload?.error
       
-      if (url) {
-        window.location.href = url
-      } else {
-        throw new Error('No checkout URL returned')
+      if (!response.ok) {
+        throw new Error(typeof error === 'string' ? error : 'Kunne ikke opprette bestilling')
       }
+
+      if (orderId) {
+        window.location.href = `/success?order_id=${encodeURIComponent(orderId)}`
+        return
+      }
+      throw new Error('No order id returned')
     } catch (error: any) {
       alert(error.message)
     } finally {
@@ -142,6 +157,31 @@ export default function CartPage() {
                 </div>
               </div>
 
+              <div className="space-y-3 mb-5">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Navn</label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    placeholder="Ditt navn"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">E-post</label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    placeholder="deg@eksempel.no"
+                    required
+                  />
+                </div>
+              </div>
+
               <button
                 onClick={handleCheckout}
                 disabled={loading}
@@ -151,13 +191,13 @@ export default function CartPage() {
                   'Behandler...'
                 ) : (
                   <>
-                    Gå til kassen <CreditCard suppressHydrationWarning className="w-4 h-4" />
+                    Send bestilling <Send suppressHydrationWarning className="w-4 h-4" />
                   </>
                 )}
               </button>
               
               <p className="text-xs text-center text-muted-foreground mt-4">
-                Sikker betaling via Stripe
+                Ingen betaling nå. Du får oppdateringer på e-post.
               </p>
             </div>
           </div>

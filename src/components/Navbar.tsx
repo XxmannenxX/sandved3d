@@ -72,6 +72,13 @@ export default function Navbar() {
         Produkter
       </Link>
       <Link 
+        href="/products" 
+        className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        onClick={closeMenu}
+      >
+        Kategorier
+      </Link>
+      <Link 
         href="/custom-request" 
         className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         onClick={closeMenu}

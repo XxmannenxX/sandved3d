@@ -9,13 +9,13 @@ import { CheckCircle } from 'lucide-react'
 function SuccessContent() {
   const clearCart = useCartStore((state) => state.clearCart)
   const searchParams = useSearchParams()
-  const sessionId = searchParams.get('session_id')
+  const orderId = searchParams.get('order_id')
 
   useEffect(() => {
-    if (sessionId) {
+    if (orderId) {
       clearCart()
     }
-  }, [sessionId, clearCart])
+  }, [orderId, clearCart])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
@@ -24,9 +24,9 @@ function SuccessContent() {
           <CheckCircle suppressHydrationWarning className="h-10 w-10 sm:h-12 sm:w-12 text-green-500" />
         </div>
       </div>
-      <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Ordre vellykket!</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Bestilling mottatt!</h1>
       <p className="text-muted-foreground mb-8 sm:mb-10 text-base sm:text-lg">
-        Takk for kjøpet ditt. Vi sender deg en e-postbekreftelse snart.
+        Takk! Vi sender deg en e-postbekreftelse og oppdateringer på bestillingen din.
       </p>
       <Link href="/" className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
         Tilbake til hjem

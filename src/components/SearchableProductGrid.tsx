@@ -8,7 +8,13 @@ import { Database } from '@/types/supabase'
 
 type Product = Database['public']['Tables']['products']['Row']
 
-export default function SearchableProductGrid({ products }: { products: Product[] }) {
+export default function SearchableProductGrid({
+  products,
+  nestedBasePath,
+}: {
+  products: Product[]
+  nestedBasePath?: string
+}) {
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredProducts = products.filter(product => 
@@ -72,13 +78,19 @@ export default function SearchableProductGrid({ products }: { products: Product[
       >
         {filteredProducts.map((product) => {
           const label = getCustomizationLabel(product);
+          const href =
+            nestedBasePath
+              ? `${nestedBasePath}/${product.id}`
+              : product.category_slug && product.type_slug
+                ? `/products/${product.category_slug}/${product.type_slug}/${product.id}`
+                : `/products/${product.id}`
           return (
             <motion.div
               key={product.id}
               variants={cardVariants}
               transition={baseTransition}
             >
-              <Link href={`/products/${product.id}`} className="group block h-full">
+              <Link href={href} className="group block h-full">
                 <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border overflow-hidden hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 flex flex-col h-full">
                   <div className="bg-muted/50 relative w-full overflow-hidden">
                     <img
