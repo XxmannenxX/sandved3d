@@ -52,6 +52,7 @@ export async function sendCustomerOrderConfirmationEmail(orderId: string) {
         created_at,
         email,
         customer_name,
+        customer_phone,
         amount_total,
         status,
         order_items (
@@ -70,6 +71,7 @@ export async function sendCustomerOrderConfirmationEmail(orderId: string) {
   const siteUrl = getSiteUrl()
   const from = getFromAddress()
   const resend = getResendClient()
+  const vippsAmount = Number(order.amount_total ?? 0).toFixed(2)
 
   const itemsText =
     (order as any).order_items
@@ -88,9 +90,16 @@ export async function sendCustomerOrderConfirmationEmail(orderId: string) {
 
 Vi har mottatt bestillingen din.
 
+VIKTIG – BETALING (VIPPS):
+Vipps ${vippsAmount} kr til Andreas Lundevik (94067616)
+Melding: Bestilling #${orderNo}
+
+Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.
+
 Ordre: #${orderNo}
 Status: ${statusLabel(order.status || 'pending')}
 Sum: ${order.amount_total ?? 0} kr
+Telefon: ${order.customer_phone || ''}
 
 Varer:
 ${itemsText}
@@ -117,10 +126,19 @@ ${siteUrl ? `Du kan kontakte oss via nettsiden: ${siteUrl}\n` : ''}`.trim()
     <h2 style="margin:0 0 12px;">Bestilling mottatt</h2>
     <p style="margin:0 0 12px;">Hei ${escapeHtml(order.customer_name || '')}!</p>
     <p style="margin:0 0 16px;">Vi har mottatt bestillingen din.</p>
+    <div style="border:2px solid #22c55e; background:#052e16; color:#dcfce7; padding:12px 14px; border-radius:10px; margin:0 0 16px;">
+      <div style="font-weight:800; letter-spacing:0.2px; margin-bottom:6px;">VIKTIG – BETALING (VIPPS)</div>
+      <div style="font-size:16px;"><strong>Vipps ${escapeHtml(vippsAmount)} kr</strong> til <strong>Andreas Lundevik (94067616)</strong></div>
+      <div style="margin-top:6px;">Melding: <strong>Bestilling #${escapeHtml(orderNo)}</strong></div>
+    </div>
+    <div style="background:#0b1220; color:#e5e7eb; padding:12px 14px; border-radius:10px; margin:0 0 16px;">
+      Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.
+    </div>
     <div style="background:#0b1220; color:#e5e7eb; padding:12px 14px; border-radius:10px; margin:0 0 16px;">
       <div><strong>Ordre:</strong> #${escapeHtml(orderNo)}</div>
       <div><strong>Status:</strong> ${escapeHtml(statusLabel(order.status || 'pending'))}</div>
       <div><strong>Sum:</strong> ${Number(order.amount_total ?? 0).toFixed(2)} kr</div>
+      ${order.customer_phone ? `<div><strong>Telefon:</strong> ${escapeHtml(String(order.customer_phone))}</div>` : ''}
     </div>
     <h3 style="margin:0 0 8px;">Varer</h3>
     <ul style="padding-left:18px; margin:0 0 16px;">
@@ -197,5 +215,6 @@ Ordre: #${orderNo}`.trim()
     { idempotencyKey: `order-status/${order.id}/${newStatus}` }
   )
 }
+
 
 

@@ -83,7 +83,7 @@ export default function SearchableProductGrid({
               ? `${nestedBasePath}/${product.id}`
               : product.category_slug && product.type_slug
                 ? `/products/${product.category_slug}/${product.type_slug}/${product.id}`
-                : `/products/${product.id}`
+                : `/products/item/${product.id}`
           return (
             <motion.div
               key={product.id}
@@ -102,7 +102,7 @@ export default function SearchableProductGrid({
                     />
                     {label && (
                       <div className="absolute top-2 right-2">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/20 backdrop-blur-md">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-500/20 text-sky-200 border border-sky-500/25 backdrop-blur-md">
                           {label}
                         </span>
                       </div>

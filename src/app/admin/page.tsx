@@ -196,6 +196,9 @@ export default async function AdminDashboard() {
                         {order.customer_name ? `${order.customer_name} · ` : ''}
                         {order.email}
                       </p>
+                      {order.customer_phone && (
+                        <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                      )}
                       <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                         {new Date(order.created_at!).toLocaleDateString()} ·{' '}
                         {new Date(order.created_at!).toLocaleTimeString()}
@@ -246,6 +249,9 @@ export default async function AdminDashboard() {
                       {order.customer_name ? `${order.customer_name} · ` : ''}
                       {order.email}
                     </p>
+                    {order.customer_phone && (
+                      <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                    )}
                     <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                       {new Date(order.created_at!).toLocaleDateString()} ·{' '}
                       {new Date(order.created_at!).toLocaleTimeString()}

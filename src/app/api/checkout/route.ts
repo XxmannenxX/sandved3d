@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     const { items, customer } = (await request.json()) as {
       items: CartItem[]
-      customer?: { name?: string; email?: string }
+      customer?: { name?: string; email?: string; phone?: string }
     }
     
     if (!items || items.length === 0) {
@@ -18,12 +18,21 @@ export async function POST(request: Request) {
 
     const customerName = (customer?.name || '').trim()
     const customerEmail = (customer?.email || '').trim().toLowerCase()
+    const customerPhone = (customer?.phone || '').trim()
 
     if (!customerName) {
       return NextResponse.json({ error: 'Missing name' }, { status: 400 })
     }
     if (!customerEmail || !customerEmail.includes('@')) {
       return NextResponse.json({ error: 'Missing or invalid email' }, { status: 400 })
+    }
+    if (!customerPhone) {
+      return NextResponse.json({ error: 'Missing phone' }, { status: 400 })
+    }
+    // Keep phone validation permissive (people may include +47, spaces, etc.)
+    const phoneDigits = customerPhone.replaceAll(/\D/g, '')
+    if (phoneDigits.length < 8) {
+      return NextResponse.json({ error: 'Invalid phone' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
@@ -66,6 +75,7 @@ export async function POST(request: Request) {
       .insert({
         email: customerEmail,
         customer_name: customerName,
+        customer_phone: customerPhone,
         amount_total: amountTotal,
         status: 'pending',
       } as any)

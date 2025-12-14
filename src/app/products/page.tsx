@@ -73,6 +73,11 @@ export default async function ProductsIndexPage() {
                     className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                     style={{ maxHeight: '280px' }}
                   />
+                  <div className="absolute top-2 left-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-200 border border-emerald-500/25 backdrop-blur-md">
+                      Mappe
+                    </span>
+                  </div>
                 </div>
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-foreground group-hover:text-blue-400 transition-colors">
@@ -88,5 +93,6 @@ export default async function ProductsIndexPage() {
     </div>
   )
 }
+
 
 

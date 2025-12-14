@@ -61,6 +61,7 @@ export type Database = {
           amount_total: number | null
           created_at: string | null
           customer_name: string | null
+          customer_phone: string | null
           email: string
           id: string
           shipping_details: Json | null
@@ -70,6 +71,7 @@ export type Database = {
           amount_total?: number | null
           created_at?: string | null
           customer_name?: string | null
+          customer_phone?: string | null
           email: string
           id?: string
           shipping_details?: Json | null
@@ -79,6 +81,7 @@ export type Database = {
           amount_total?: number | null
           created_at?: string | null
           customer_name?: string | null
+          customer_phone?: string | null
           email?: string
           id?: string
           shipping_details?: Json | null

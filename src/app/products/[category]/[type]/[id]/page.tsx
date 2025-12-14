@@ -92,7 +92,7 @@ export default async function NestedProductPage({
               <h2 className="sr-only">Produktinformasjon</h2>
               <p className="text-2xl sm:text-3xl font-bold text-blue-400">{product.base_price} kr</p>
               {label && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-300 border border-sky-500/25">
                   {label}
                 </span>
               )}

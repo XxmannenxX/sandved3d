@@ -11,6 +11,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false)
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
 
   useEffect(() => {
     setMounted(true)
@@ -23,6 +24,7 @@ export default function CartPage() {
     try {
       if (!customerName.trim()) throw new Error('Vennligst fyll inn navn')
       if (!customerEmail.trim() || !customerEmail.includes('@')) throw new Error('Vennligst fyll inn en gyldig e-post')
+      if (!customerPhone.trim()) throw new Error('Vennligst fyll inn telefonnummer')
 
       const response = await fetch('/api/checkout', {
         method: 'POST',
@@ -34,6 +36,7 @@ export default function CartPage() {
           customer: {
             name: customerName,
             email: customerEmail,
+            phone: customerPhone,
           },
         }),
       })
@@ -177,6 +180,17 @@ export default function CartPage() {
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                     placeholder="deg@eksempel.no"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Telefon</label>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    placeholder="f.eks. 94067616"
                     required
                   />
                 </div>

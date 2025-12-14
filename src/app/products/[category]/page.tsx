@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import SearchableProductGrid from '@/components/SearchableProductGrid'
 
 export const revalidate = 60
 
@@ -23,9 +24,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
 
   const { data: products } = await supabase
     .from('products')
-    .select('type_slug, images')
+    .select('*')
     .eq('is_archived', false)
     .eq('category_slug', category)
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: false })
 
   if (!products || products.length === 0) {
     notFound()
@@ -72,37 +75,54 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
         </Link>
       </div>
 
-      {types.length === 0 ? (
-        <div className="bg-card/50 border border-border rounded-2xl p-6 text-muted-foreground">
-          Ingen typer ennå. Legg til <span className="font-medium text-foreground">type_slug</span> på produkter i admin.
+      <div className="space-y-10">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Undermapper</h2>
+          {types.length === 0 ? (
+            <div className="bg-card/50 border border-border rounded-2xl p-6 text-muted-foreground">
+              Ingen undermapper ennå. Legg til <span className="font-medium text-foreground">type_slug</span> på produkter
+              i admin.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {types.map((t) => (
+                <Link key={t.slug} href={`/products/${category}/${t.slug}`} className="group block">
+                  <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border overflow-hidden hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
+                    <div className="bg-muted/50 relative w-full overflow-hidden">
+                      <img
+                        src={t.image || 'https://placehold.co/600x300/18181b/fafafa?text=Folder'}
+                        alt={t.label}
+                        loading="lazy"
+                        className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                        style={{ maxHeight: '280px' }}
+                      />
+                      <div className="absolute top-2 left-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-200 border border-purple-500/25 backdrop-blur-md">
+                          Undermappe
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-xl font-bold text-foreground group-hover:text-blue-400 transition-colors">
+                        {t.label}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">{t.count} produkt(er)</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {types.map((t) => (
-            <Link key={t.slug} href={`/products/${category}/${t.slug}`} className="group block">
-              <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border overflow-hidden hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
-                <div className="bg-muted/50 relative w-full overflow-hidden">
-                  <img
-                    src={t.image || 'https://placehold.co/600x300/18181b/fafafa?text=Type'}
-                    alt={t.label}
-                    loading="lazy"
-                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
-                    style={{ maxHeight: '280px' }}
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-foreground group-hover:text-blue-400 transition-colors">
-                    {t.label}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">{t.count} produkt(er)</p>
-                </div>
-              </div>
-            </Link>
-          ))}
+
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Alle produkter i {labelFromSlug(category)}</h2>
+          <SearchableProductGrid products={products as any} />
         </div>
-      )}
+      </div>
     </div>
   )
 }
+
 
 

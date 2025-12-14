@@ -1,12 +1,21 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Image as ImageIcon, Pencil, ArrowUp, ArrowDown, Save, X, Archive } from 'lucide-react'
 import { Database } from '@/types/supabase'
 
 type Product = Database['public']['Tables']['products']['Row']
+
+function slugify(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replaceAll(/['"]/g, '')
+    .replaceAll(/[^a-z0-9]+/g, '-')
+    .replaceAll(/^-+|-+$/g, '')
+}
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -31,6 +40,39 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts()
   }, [])
+
+  const existingCategorySlugs = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of products) {
+      if (p.category_slug) set.add(p.category_slug)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [products])
+
+  const existingTypeSlugsForCategory = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const p of products) {
+      const c = p.category_slug || ''
+      const t = p.type_slug || ''
+      if (!c || !t) continue
+      if (!map.has(c)) map.set(c, new Set())
+      map.get(c)!.add(t)
+    }
+    return map
+  }, [products])
+
+  const suggestedTypeSlugs = useMemo(() => {
+    const c = categorySlug.trim()
+    if (!c) {
+      const set = new Set<string>()
+      for (const p of products) {
+        if (p.type_slug) set.add(p.type_slug)
+      }
+      return Array.from(set).sort((a, b) => a.localeCompare(b))
+    }
+    const set = existingTypeSlugsForCategory.get(c)
+    return set ? Array.from(set).sort((a, b) => a.localeCompare(b)) : []
+  }, [products, categorySlug, existingTypeSlugsForCategory])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -119,6 +161,9 @@ export default function ProductsPage() {
     setFormLoading(true)
 
     try {
+        const normalizedCategory = categorySlug.trim() ? slugify(categorySlug) : ''
+        const normalizedType = typeSlug.trim() ? slugify(typeSlug) : ''
+
         let imageUrls: string[] | null = null
         
         // Upload new image if selected
@@ -142,8 +187,8 @@ export default function ProductsPage() {
             name,
             description,
             base_price: parseFloat(price),
-            category_slug: categorySlug.trim() ? categorySlug.trim() : null,
-            type_slug: typeSlug.trim() ? typeSlug.trim() : null,
+            category_slug: normalizedCategory ? normalizedCategory : null,
+            type_slug: normalizedType ? normalizedType : null,
             is_customizable: isCustomizable,
             customization_config: isCustomizable ? {
                 allow_text: allowText,
@@ -243,24 +288,24 @@ export default function ProductsPage() {
           {(product.category_slug || product.type_slug) && (
             <div className="mt-1 flex flex-wrap gap-1.5">
               {product.category_slug && (
-                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
-                  {product.category_slug}
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/25">
+                  Mappe: {product.category_slug}
                 </span>
               )}
               {product.type_slug && (
-                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
-                  {product.type_slug}
+                <span className="text-[10px] bg-purple-500/10 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/25">
+                  Undermappe: {product.type_slug}
                 </span>
               )}
             </div>
           )}
           <div className="flex items-center gap-2 mt-1">
             {customLabel && (
-              <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+              <span className="text-[10px] bg-sky-500/10 text-sky-300 px-1.5 py-0.5 rounded border border-sky-500/25">
                 {customLabel}
               </span>
             )}
-            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+            <span className="text-[10px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded border border-border/60">
               Indeks: {product.display_order || 0}
             </span>
           </div>
@@ -359,27 +404,81 @@ export default function ProductsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-1">Kategori slug</label>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">Mappe (kategori)</label>
                             <input
                               type="text"
                               value={categorySlug}
                               onChange={e => setCategorySlug(e.target.value)}
+                              onBlur={(e) => setCategorySlug(e.target.value ? slugify(e.target.value) : '')}
+                              list="category-slugs"
                               placeholder="f.eks. keychains"
                               className="block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
                             />
-                            <p className="text-[11px] text-muted-foreground mt-1">Bruk små bokstaver og bindestrek.</p>
+                            <datalist id="category-slugs">
+                              {existingCategorySlugs.map((slug) => (
+                                <option key={slug} value={slug} />
+                              ))}
+                            </datalist>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Dette er “mappen” på forsiden. Bruk små bokstaver og bindestrek.
+                            </p>
+                            {existingCategorySlugs.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {existingCategorySlugs.slice(0, 8).map((slug) => (
+                                  <button
+                                    key={slug}
+                                    type="button"
+                                    onClick={() => setCategorySlug(slug)}
+                                    className="text-[11px] bg-emerald-500/10 text-emerald-300 px-2 py-1 rounded border border-emerald-500/25 hover:bg-emerald-500/15 transition-colors"
+                                    title="Bruk eksisterende mappe"
+                                  >
+                                    {slug}
+                                  </button>
+                                ))}
+                                {existingCategorySlugs.length > 8 && (
+                                  <span className="text-[11px] text-muted-foreground px-2 py-1">…</span>
+                                )}
+                              </div>
+                            )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-1">Type slug</label>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">Undermappe (type)</label>
                             <input
                               type="text"
                               value={typeSlug}
                               onChange={e => setTypeSlug(e.target.value)}
+                              onBlur={(e) => setTypeSlug(e.target.value ? slugify(e.target.value) : '')}
+                              list="type-slugs"
                               placeholder="f.eks. classic"
                               className="block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
                             />
-                            <p className="text-[11px] text-muted-foreground mt-1">Bruk små bokstaver og bindestrek.</p>
+                            <datalist id="type-slugs">
+                              {suggestedTypeSlugs.map((slug) => (
+                                <option key={slug} value={slug} />
+                              ))}
+                            </datalist>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Valgfritt. Brukes som undermappe inne i en mappe.
+                            </p>
+                            {suggestedTypeSlugs.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {suggestedTypeSlugs.slice(0, 8).map((slug) => (
+                                  <button
+                                    key={slug}
+                                    type="button"
+                                    onClick={() => setTypeSlug(slug)}
+                                    className="text-[11px] bg-purple-500/10 text-purple-300 px-2 py-1 rounded border border-purple-500/25 hover:bg-purple-500/15 transition-colors"
+                                    title="Bruk eksisterende undermappe"
+                                  >
+                                    {slug}
+                                  </button>
+                                ))}
+                                {suggestedTypeSlugs.length > 8 && (
+                                  <span className="text-[11px] text-muted-foreground px-2 py-1">…</span>
+                                )}
+                              </div>
+                            )}
                         </div>
                     </div>
                     
