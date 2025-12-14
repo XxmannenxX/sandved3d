@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Image as ImageIcon, Pencil, ArrowUp, ArrowDown, Save, X, Archive } from 'lucide-react'
 import { Database } from '@/types/supabase'
 
@@ -21,20 +20,20 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [listQuery, setListQuery] = useState('')
+  const [listCategory, setListCategory] = useState('')
   
   // Form State
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [categorySlug, setCategorySlug] = useState('')
-  const [typeSlug, setTypeSlug] = useState('')
   const [isCustomizable, setIsCustomizable] = useState(false)
   const [allowText, setAllowText] = useState(false)
   const [allowImage, setAllowImage] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [formLoading, setFormLoading] = useState(false)
   
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
@@ -48,31 +47,6 @@ export default function ProductsPage() {
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [products])
-
-  const existingTypeSlugsForCategory = useMemo(() => {
-    const map = new Map<string, Set<string>>()
-    for (const p of products) {
-      const c = p.category_slug || ''
-      const t = p.type_slug || ''
-      if (!c || !t) continue
-      if (!map.has(c)) map.set(c, new Set())
-      map.get(c)!.add(t)
-    }
-    return map
-  }, [products])
-
-  const suggestedTypeSlugs = useMemo(() => {
-    const c = categorySlug.trim()
-    if (!c) {
-      const set = new Set<string>()
-      for (const p of products) {
-        if (p.type_slug) set.add(p.type_slug)
-      }
-      return Array.from(set).sort((a, b) => a.localeCompare(b))
-    }
-    const set = existingTypeSlugsForCategory.get(c)
-    return set ? Array.from(set).sort((a, b) => a.localeCompare(b)) : []
-  }, [products, categorySlug, existingTypeSlugsForCategory])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -95,7 +69,6 @@ export default function ProductsPage() {
     setDescription('')
     setPrice('')
     setCategorySlug('')
-    setTypeSlug('')
     setIsCustomizable(false)
     setAllowText(false)
     setAllowImage(false)
@@ -109,7 +82,6 @@ export default function ProductsPage() {
     setDescription(product.description || '')
     setPrice(product.base_price.toString())
     setCategorySlug(product.category_slug || '')
-    setTypeSlug(product.type_slug || '')
     setIsCustomizable(product.is_customizable || false)
     const config = product.customization_config as any || {}
     setAllowText(config.allow_text || false)
@@ -162,7 +134,6 @@ export default function ProductsPage() {
 
     try {
         const normalizedCategory = categorySlug.trim() ? slugify(categorySlug) : ''
-        const normalizedType = typeSlug.trim() ? slugify(typeSlug) : ''
 
         let imageUrls: string[] | null = null
         
@@ -188,7 +159,6 @@ export default function ProductsPage() {
             description,
             base_price: parseFloat(price),
             category_slug: normalizedCategory ? normalizedCategory : null,
-            type_slug: normalizedType ? normalizedType : null,
             is_customizable: isCustomizable,
             customization_config: isCustomizable ? {
                 allow_text: allowText,
@@ -257,6 +227,32 @@ export default function ProductsPage() {
   const archivedProducts = products.filter(p => p.is_archived)
   const archivedCount = archivedProducts.length
 
+  const filteredActiveProducts = useMemo(() => {
+    const q = listQuery.trim().toLowerCase()
+    const c = listCategory.trim()
+    return activeProducts.filter((p) => {
+      if (c && (p.category_slug || '') !== c) return false
+      if (!q) return true
+      const name = p.name?.toLowerCase() || ''
+      const desc = p.description?.toLowerCase() || ''
+      const cat = p.category_slug?.toLowerCase() || ''
+      return name.includes(q) || desc.includes(q) || cat.includes(q)
+    })
+  }, [activeProducts, listQuery, listCategory])
+
+  const filteredArchivedProducts = useMemo(() => {
+    const q = listQuery.trim().toLowerCase()
+    const c = listCategory.trim()
+    return archivedProducts.filter((p) => {
+      if (c && (p.category_slug || '') !== c) return false
+      if (!q) return true
+      const name = p.name?.toLowerCase() || ''
+      const desc = p.description?.toLowerCase() || ''
+      const cat = p.category_slug?.toLowerCase() || ''
+      return name.includes(q) || desc.includes(q) || cat.includes(q)
+    })
+  }, [archivedProducts, listQuery, listCategory])
+
   const renderProductRow = (product: Product) => {
     const customLabel = getCustomizationLabel(product);
     return (
@@ -285,16 +281,11 @@ export default function ProductsPage() {
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {product.description || 'Ingen beskrivelse gitt ennå.'}
           </p>
-          {(product.category_slug || product.type_slug) && (
+          {product.category_slug && (
             <div className="mt-1 flex flex-wrap gap-1.5">
               {product.category_slug && (
                 <span className="text-[10px] bg-emerald-500/10 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/25">
-                  Mappe: {product.category_slug}
-                </span>
-              )}
-              {product.type_slug && (
-                <span className="text-[10px] bg-purple-500/10 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/25">
-                  Undermappe: {product.type_slug}
+                  Kategori: {product.category_slug}
                 </span>
               )}
             </div>
@@ -402,9 +393,8 @@ export default function ProductsPage() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-1">Mappe (kategori)</label>
+                    <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">Kategori</label>
                             <input
                               type="text"
                               value={categorySlug}
@@ -420,7 +410,7 @@ export default function ProductsPage() {
                               ))}
                             </datalist>
                             <p className="text-[11px] text-muted-foreground mt-1">
-                              Dette er “mappen” på forsiden. Bruk små bokstaver og bindestrek.
+                              Bruk små bokstaver og bindestrek (slug). Dette blir filter-kategorien i butikken.
                             </p>
                             {existingCategorySlugs.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -430,7 +420,7 @@ export default function ProductsPage() {
                                     type="button"
                                     onClick={() => setCategorySlug(slug)}
                                     className="text-[11px] bg-emerald-500/10 text-emerald-300 px-2 py-1 rounded border border-emerald-500/25 hover:bg-emerald-500/15 transition-colors"
-                                    title="Bruk eksisterende mappe"
+                                    title="Bruk eksisterende kategori"
                                   >
                                     {slug}
                                   </button>
@@ -440,46 +430,6 @@ export default function ProductsPage() {
                                 )}
                               </div>
                             )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-1">Undermappe (type)</label>
-                            <input
-                              type="text"
-                              value={typeSlug}
-                              onChange={e => setTypeSlug(e.target.value)}
-                              onBlur={(e) => setTypeSlug(e.target.value ? slugify(e.target.value) : '')}
-                              list="type-slugs"
-                              placeholder="f.eks. classic"
-                              className="block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
-                            />
-                            <datalist id="type-slugs">
-                              {suggestedTypeSlugs.map((slug) => (
-                                <option key={slug} value={slug} />
-                              ))}
-                            </datalist>
-                            <p className="text-[11px] text-muted-foreground mt-1">
-                              Valgfritt. Brukes som undermappe inne i en mappe.
-                            </p>
-                            {suggestedTypeSlugs.length > 0 && (
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {suggestedTypeSlugs.slice(0, 8).map((slug) => (
-                                  <button
-                                    key={slug}
-                                    type="button"
-                                    onClick={() => setTypeSlug(slug)}
-                                    className="text-[11px] bg-purple-500/10 text-purple-300 px-2 py-1 rounded border border-purple-500/25 hover:bg-purple-500/15 transition-colors"
-                                    title="Bruk eksisterende undermappe"
-                                  >
-                                    {slug}
-                                  </button>
-                                ))}
-                                {suggestedTypeSlugs.length > 8 && (
-                                  <span className="text-[11px] text-muted-foreground px-2 py-1">…</span>
-                                )}
-                              </div>
-                            )}
-                        </div>
                     </div>
                     
                     <div>
@@ -585,25 +535,47 @@ export default function ProductsPage() {
         <div className="lg:col-span-2 space-y-6">
             <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-border bg-muted/10">
-                    <h3 className="font-bold text-foreground">Aktive produkter</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <h3 className="font-bold text-foreground">Aktive produkter</h3>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <input
+                          value={listQuery}
+                          onChange={(e) => setListQuery(e.target.value)}
+                          placeholder="Søk..."
+                          className="w-full sm:w-56 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
+                        />
+                        <select
+                          value={listCategory}
+                          onChange={(e) => setListCategory(e.target.value)}
+                          className="w-full sm:w-48 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="">Alle kategorier</option>
+                          {existingCategorySlugs.map((slug) => (
+                            <option key={slug} value={slug}>
+                              {slug}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                 </div>
                 {loading ? (
                     <div className="p-8 text-center">
                         <Loader2 suppressHydrationWarning className="w-8 h-8 animate-spin mx-auto text-blue-500" />
                         <p className="text-muted-foreground mt-2">Laster produkter...</p>
                     </div>
-                ) : activeProducts.length === 0 ? (
+                ) : filteredActiveProducts.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground">
-                        Ingen aktive produkter. Opprett ett for å komme i gang.
+                        Ingen treff.
                     </div>
                 ) : (
                     <ul className="divide-y divide-border">
-                        {activeProducts.map(renderProductRow)}
+                        {filteredActiveProducts.map(renderProductRow)}
                     </ul>
                 )}
             </div>
 
-            {archivedProducts.length > 0 && (
+            {filteredArchivedProducts.length > 0 && (
               <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-border bg-muted/10 flex items-center justify-between">
                   <div>
@@ -613,11 +585,11 @@ export default function ProductsPage() {
                     </p>
                   </div>
                   <span className="text-xs px-2 py-1 rounded-full bg-border/50 text-muted-foreground">
-                    {archivedProducts.length}
+                    {filteredArchivedProducts.length}
                   </span>
                 </div>
                 <ul className="divide-y divide-border">
-                  {archivedProducts.map(renderProductRow)}
+                  {filteredArchivedProducts.map(renderProductRow)}
                 </ul>
               </div>
             )}

@@ -1,14 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
-import { Package, LogOut, Settings, TrendingUp, DollarSign, Clock } from 'lucide-react'
+import { Package, LogOut, Settings, TrendingUp, DollarSign, Clock, ScrollText } from 'lucide-react'
 import OrderStatusSelector from '@/components/OrderStatusSelector'
 import { sendCustomerOrderStatusUpdateEmail } from '@/lib/email/resend'
 
-export default async function AdminDashboard() {
+import AdminOrderSearch from '@/components/AdminOrderSearch'
+
+export default async function AdminDashboard(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const searchParams = await props.searchParams
+  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined
+  
   const supabase = await createClient()
   
-  const { data: orders } = await supabase
+  let query = supabase
     .from('orders')
     .select(`
       *,
@@ -19,6 +26,12 @@ export default async function AdminDashboard() {
       )
     `)
     .order('created_at', { ascending: false })
+
+  if (search) {
+    query = query.or(`customer_name.ilike.%${search}%,email.ilike.%${search}%,customer_phone.ilike.%${search}%`)
+  }
+
+  const { data: orders } = await query
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
     "use server"
@@ -114,10 +127,21 @@ export default async function AdminDashboard() {
           <h1 className="text-3xl font-bold text-foreground">Admin-dashboard</h1>
           <p className="text-muted-foreground mt-1">Administrer ordrer og produkter</p>
         </div>
+        
+        <AdminOrderSearch />
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+            <Link href="/admin/stats" className="inline-flex w-full sm:w-auto items-center justify-center bg-card border border-border text-foreground hover:bg-muted px-4 py-2 rounded-lg transition-colors font-medium">
+              <TrendingUp suppressHydrationWarning className="w-4 h-4 mr-2" />
+              Statistikk
+            </Link>
             <Link href="/admin/products" className="inline-flex w-full sm:w-auto items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 font-medium">
               <Settings suppressHydrationWarning className="w-4 h-4 mr-2" />
               Administrer produkter
+            </Link>
+            <Link href="/admin/logs" className="inline-flex w-full sm:w-auto items-center justify-center bg-card border border-border text-foreground hover:bg-muted px-4 py-2 rounded-lg transition-colors font-medium">
+              <ScrollText suppressHydrationWarning className="w-4 h-4 mr-2" />
+              Logs
             </Link>
             <Link href="/admin/settings" className="inline-flex w-full sm:w-auto items-center justify-center bg-card border border-border text-foreground hover:bg-muted px-4 py-2 rounded-lg transition-colors font-medium">
               <Settings suppressHydrationWarning className="w-4 h-4 mr-2" />

@@ -158,6 +158,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_logs: {
+        Row: {
+          id: string
+          created_at: string
+          admin_user_id: string | null
+          action: string
+          table_name: string
+          record_id: string | null
+          metadata: Json
+          old_data: Json | null
+          new_data: Json | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          admin_user_id?: string | null
+          action: string
+          table_name: string
+          record_id?: string | null
+          metadata?: Json
+          old_data?: Json | null
+          new_data?: Json | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          admin_user_id?: string | null
+          action?: string
+          table_name?: string
+          record_id?: string | null
+          metadata?: Json
+          old_data?: Json | null
+          new_data?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

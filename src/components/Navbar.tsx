@@ -69,14 +69,14 @@ export default function Navbar() {
         className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         onClick={closeMenu}
       >
-        Produkter
+        Hjem
       </Link>
       <Link 
         href="/products" 
         className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         onClick={closeMenu}
       >
-        Kategorier
+        Butikk
       </Link>
       <Link 
         href="/custom-request" 
@@ -93,6 +93,13 @@ export default function Navbar() {
             onClick={closeMenu}
           >
             Admin
+          </Link>
+          <Link 
+            href="/admin/logs"
+            className="px-3 py-2 rounded-md text-sm font-semibold bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
+            onClick={closeMenu}
+          >
+            Logs
           </Link>
           <Link 
             href="/admin/products"
