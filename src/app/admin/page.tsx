@@ -7,6 +7,8 @@ import { sendCustomerOrderStatusUpdateEmail } from '@/lib/email/resend'
 
 import AdminOrderSearch from '@/components/AdminOrderSearch'
 
+export const runtime = 'edge'
+
 export default async function AdminDashboard(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {

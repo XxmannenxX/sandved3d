@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Trash2, ShoppingBag, ArrowRight, Send } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
+export const runtime = 'edge'
+
 export default function CartPage() {
   const { items, removeItem } = useCartStore()
   const [mounted, setMounted] = useState(false)

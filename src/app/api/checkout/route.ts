@@ -3,7 +3,7 @@ import { CartItem } from '@/store/cart'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendCustomerOrderConfirmationEmail } from '@/lib/email/resend'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 export async function POST(request: Request) {
   try {

@@ -60,6 +60,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  background-color: var(--background);
+}
+
 body {
   background-color: transparent;
   color: var(--foreground);

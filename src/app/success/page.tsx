@@ -6,6 +6,8 @@ import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 
+export const runtime = 'edge'
+
 function SuccessContent() {
   const clearCart = useCartStore((state) => state.clearCart)
   const searchParams = useSearchParams()

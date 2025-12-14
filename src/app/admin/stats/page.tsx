@@ -4,6 +4,7 @@ import { ArrowLeft, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react'
 import StatsCharts from './StatsCharts'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
 
 export default async function StatsPage() {
   const supabase = await createClient()

@@ -44,13 +44,13 @@ export default function StatsCharts({ dailyData, monthlyData }: StatsChartsProps
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false} 
-                tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
+                tickFormatter={(value: string) => new Date(value).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
               />
               <YAxis 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false}
-                tickFormatter={(value) => `${value} kr`}
+                tickFormatter={(value: number) => `${value} kr`}
               />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
@@ -86,7 +86,7 @@ export default function StatsCharts({ dailyData, monthlyData }: StatsChartsProps
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false}
-                tickFormatter={(value) => `${value} kr`}
+                tickFormatter={(value: number) => `${value} kr`}
               />
               <Tooltip 
                 contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}

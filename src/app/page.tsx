@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import SearchableProductGrid from '@/components/SearchableProductGrid'
 import HeroSection from '@/components/HeroSection'
 
+export const runtime = 'edge'
+
 export const revalidate = 60 // Revalidate every minute
 
 export default async function Home() {
