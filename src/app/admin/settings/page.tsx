@@ -8,6 +8,18 @@ import { ChevronLeft } from 'lucide-react'
 
 export default function SettingsPage() {
   const [customRequestEmail, setCustomRequestEmail] = useState('')
+
+  const [vippsRecipientName, setVippsRecipientName] = useState('Andreas Lundevik')
+  const [vippsNumber, setVippsNumber] = useState('94067616')
+  const [orderConfirmationSubject, setOrderConfirmationSubject] = useState('Bestilling mottatt #{{orderNo}}')
+  const [orderConfirmationDeliveryNote, setOrderConfirmationDeliveryNote] = useState(
+    'Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.'
+  )
+  const [orderStatusUpdateSubject, setOrderStatusUpdateSubject] = useState('Oppdatering på bestilling #{{orderNo}}')
+  const [orderStatusUpdateLine, setOrderStatusUpdateLine] = useState(
+    'Statusen på bestillingen din er oppdatert til: {{status}}.'
+  )
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const supabase = createClient()
@@ -20,20 +32,39 @@ export default function SettingsPage() {
     try {
       const { data, error } = await supabase
         .from('settings')
-        .select('value')
-        .eq('key', 'custom_request_email')
-        .single()
+        .select('key,value')
+        .in('key', [
+          'custom_request_email',
+          'vipps_recipient_name',
+          'vipps_number',
+          'email_order_confirmation_subject',
+          'email_order_confirmation_delivery_note',
+          'email_order_status_update_subject',
+          'email_order_status_update_line',
+        ])
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
         console.error('Error fetching settings:', error)
       }
 
-      if (data) {
-        setCustomRequestEmail(data.value || '')
-      } else {
-        // Set default if not found
-        setCustomRequestEmail('markus.lundevik@gmail.com')
+      const map: Record<string, string> = {}
+      for (const row of data || []) {
+        if (row?.key && typeof row.value === 'string') map[row.key] = row.value
       }
+
+      setCustomRequestEmail(map.custom_request_email || 'markus.lundevik@gmail.com')
+
+      setVippsRecipientName(map.vipps_recipient_name || 'Andreas Lundevik')
+      setVippsNumber(map.vipps_number || '94067616')
+      setOrderConfirmationSubject(map.email_order_confirmation_subject || 'Bestilling mottatt #{{orderNo}}')
+      setOrderConfirmationDeliveryNote(
+        map.email_order_confirmation_delivery_note ||
+          'Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.'
+      )
+      setOrderStatusUpdateSubject(map.email_order_status_update_subject || 'Oppdatering på bestilling #{{orderNo}}')
+      setOrderStatusUpdateLine(
+        map.email_order_status_update_line || 'Statusen på bestillingen din er oppdatert til: {{status}}.'
+      )
     } catch (error) {
       console.error('Error:', error)
       setCustomRequestEmail('markus.lundevik@gmail.com')
@@ -47,31 +78,36 @@ export default function SettingsPage() {
       alert('Vennligst oppgi en gyldig e-postadresse')
       return
     }
+    if (!vippsRecipientName.trim()) {
+      alert('Vennligst oppgi Vipps mottakernavn')
+      return
+    }
+    if (!vippsNumber.trim()) {
+      alert('Vennligst oppgi Vipps-nummer')
+      return
+    }
 
     setSaving(true)
     try {
-      // Try to update first
-      const { error: updateError } = await supabase
-        .from('settings')
-        .upsert({
-          key: 'custom_request_email',
-          value: customRequestEmail,
-          updated_at: new Date().toISOString()
-        })
+      const payload = [
+        { key: 'custom_request_email', value: customRequestEmail, updated_at: new Date().toISOString() },
 
-      if (updateError) {
-        // If update fails, try insert
-        const { error: insertError } = await supabase
-          .from('settings')
-          .insert({
-            key: 'custom_request_email',
-            value: customRequestEmail
-          })
+        { key: 'vipps_recipient_name', value: vippsRecipientName, updated_at: new Date().toISOString() },
+        { key: 'vipps_number', value: vippsNumber, updated_at: new Date().toISOString() },
 
-        if (insertError) {
-          throw insertError
-        }
-      }
+        { key: 'email_order_confirmation_subject', value: orderConfirmationSubject, updated_at: new Date().toISOString() },
+        {
+          key: 'email_order_confirmation_delivery_note',
+          value: orderConfirmationDeliveryNote,
+          updated_at: new Date().toISOString(),
+        },
+
+        { key: 'email_order_status_update_subject', value: orderStatusUpdateSubject, updated_at: new Date().toISOString() },
+        { key: 'email_order_status_update_line', value: orderStatusUpdateLine, updated_at: new Date().toISOString() },
+      ]
+
+      const { error: upsertError } = await supabase.from('settings').upsert(payload as any)
+      if (upsertError) throw upsertError
 
       alert('Innstillinger lagret!')
     } catch (error: any) {
@@ -120,6 +156,75 @@ export default function SettingsPage() {
               className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
               placeholder="markus.lundevik@gmail.com"
             />
+          </div>
+
+          <div className="pt-4 border-t border-border">
+            <h2 className="text-lg font-bold text-foreground mb-1">E-postmeldinger</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              Du kan bruke plassholdere: <span className="font-mono">{'{{orderNo}}'}</span>,{' '}
+              <span className="font-mono">{'{{amount}}'}</span>, <span className="font-mono">{'{{status}}'}</span>.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Vipps mottaker</label>
+                <input
+                  value={vippsRecipientName}
+                  onChange={(e) => setVippsRecipientName(e.target.value)}
+                  className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  placeholder="Andreas Lundevik"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Vipps nummer</label>
+                <input
+                  value={vippsNumber}
+                  onChange={(e) => setVippsNumber(e.target.value)}
+                  className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  placeholder="94067616"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Emne: ordrebekreftelse</label>
+                <input
+                  value={orderConfirmationSubject}
+                  onChange={(e) => setOrderConfirmationSubject(e.target.value)}
+                  className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Tekst: “betale ved levering”-notis (ordrebekreftelse)
+                </label>
+                <textarea
+                  value={orderConfirmationDeliveryNote}
+                  onChange={(e) => setOrderConfirmationDeliveryNote(e.target.value)}
+                  rows={3}
+                  className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Emne: statusoppdatering</label>
+                <input
+                  value={orderStatusUpdateSubject}
+                  onChange={(e) => setOrderStatusUpdateSubject(e.target.value)}
+                  className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Tekstlinje: statusoppdatering</label>
+                <textarea
+                  value={orderStatusUpdateLine}
+                  onChange={(e) => setOrderStatusUpdateLine(e.target.value)}
+                  rows={2}
+                  className="block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">

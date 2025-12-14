@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+type SettingsMap = Record<string, string>
+
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) throw new Error('Missing RESEND_API_KEY')
@@ -41,6 +43,28 @@ function statusLabel(status: string) {
   return map[status] || status
 }
 
+async function getSettings(keys: string[]): Promise<SettingsMap> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.from('settings').select('key,value').in('key', keys)
+  if (error) {
+    console.error('Failed to load settings for email templates:', error)
+    return {}
+  }
+  const map: SettingsMap = {}
+  for (const row of data || []) {
+    if (row?.key && typeof row.value === 'string') map[row.key] = row.value
+  }
+  return map
+}
+
+function renderTemplate(template: string, vars: Record<string, string>) {
+  let out = template
+  for (const [k, v] of Object.entries(vars)) {
+    out = out.replaceAll(`{{${k}}}`, v)
+  }
+  return out
+}
+
 export async function sendCustomerOrderConfirmationEmail(orderId: string) {
   const supabase = createAdminClient()
 
@@ -73,6 +97,24 @@ export async function sendCustomerOrderConfirmationEmail(orderId: string) {
   const resend = getResendClient()
   const vippsAmount = Number(order.amount_total ?? 0).toFixed(2)
 
+  const settings = await getSettings([
+    'vipps_recipient_name',
+    'vipps_number',
+    'email_order_confirmation_subject',
+    'email_order_confirmation_delivery_note',
+  ])
+
+  const vippsRecipientName = settings.vipps_recipient_name || 'Andreas Lundevik'
+  const vippsNumber = settings.vipps_number || '94067616'
+
+  const vars = {
+    orderNo,
+    amount: vippsAmount,
+    status: statusLabel(order.status || 'pending'),
+    vippsRecipientName,
+    vippsNumber,
+  }
+
   const itemsText =
     (order as any).order_items
       ?.map((item: any) => {
@@ -85,16 +127,20 @@ export async function sendCustomerOrderConfirmationEmail(orderId: string) {
       })
       .join('\n') || '- (ingen varer)'
 
-  const subject = `Bestilling mottatt #${orderNo}`
+  const subject = renderTemplate(settings.email_order_confirmation_subject || 'Bestilling mottatt #{{orderNo}}', vars)
+  const deliveryNote =
+    settings.email_order_confirmation_delivery_note ||
+    'Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.'
+
   const text = `Hei ${order.customer_name || ''}!
 
 Vi har mottatt bestillingen din.
 
 VIKTIG – BETALING (VIPPS):
-Vipps ${vippsAmount} kr til Andreas Lundevik (94067616)
+Vipps ${vippsAmount} kr til ${vippsRecipientName} (${vippsNumber})
 Melding: Bestilling #${orderNo}
 
-Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.
+${deliveryNote}
 
 Ordre: #${orderNo}
 Status: ${statusLabel(order.status || 'pending')}
@@ -128,11 +174,11 @@ ${siteUrl ? `Du kan kontakte oss via nettsiden: ${siteUrl}\n` : ''}`.trim()
     <p style="margin:0 0 16px;">Vi har mottatt bestillingen din.</p>
     <div style="border:2px solid #22c55e; background:#052e16; color:#dcfce7; padding:12px 14px; border-radius:10px; margin:0 0 16px;">
       <div style="font-weight:800; letter-spacing:0.2px; margin-bottom:6px;">VIKTIG – BETALING (VIPPS)</div>
-      <div style="font-size:16px;"><strong>Vipps ${escapeHtml(vippsAmount)} kr</strong> til <strong>Andreas Lundevik (94067616)</strong></div>
+      <div style="font-size:16px;"><strong>Vipps ${escapeHtml(vippsAmount)} kr</strong> til <strong>${escapeHtml(vippsRecipientName)} (${escapeHtml(vippsNumber)})</strong></div>
       <div style="margin-top:6px;">Melding: <strong>Bestilling #${escapeHtml(orderNo)}</strong></div>
     </div>
     <div style="background:#0b1220; color:#e5e7eb; padding:12px 14px; border-radius:10px; margin:0 0 16px;">
-      Hvis du heller vil betale ved levering, går det fint – men bestillingen din kan bli behandlet litt senere enn de som er betalt med Vipps.
+      ${escapeHtml(deliveryNote)}
     </div>
     <div style="background:#0b1220; color:#e5e7eb; padding:12px 14px; border-radius:10px; margin:0 0 16px;">
       <div><strong>Ordre:</strong> #${escapeHtml(orderNo)}</div>
@@ -181,18 +227,29 @@ export async function sendCustomerOrderStatusUpdateEmail(orderId: string, newSta
   const from = getFromAddress()
   const resend = getResendClient()
 
-  const subject = `Oppdatering på bestilling #${orderNo}`
+  const settings = await getSettings(['email_order_status_update_subject', 'email_order_status_update_line'])
+  const vars = { orderNo, status: statusLabel(newStatus) }
+
+  const subject = renderTemplate(
+    settings.email_order_status_update_subject || 'Oppdatering på bestilling #{{orderNo}}',
+    vars
+  )
+
+  const statusLine = renderTemplate(
+    settings.email_order_status_update_line || 'Statusen på bestillingen din er oppdatert til: {{status}}.',
+    vars
+  )
+
   const text = `Hei ${order.customer_name || ''}!
 
-Statusen på bestillingen din er oppdatert til: ${statusLabel(newStatus)}.
+${statusLine}
 
 Ordre: #${orderNo}`.trim()
 
   const html = `
   <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;">
     <p style="margin:0 0 12px;">Hei ${escapeHtml(order.customer_name || '')}!</p>
-    <p style="margin:0 0 12px;">Statusen på bestillingen din er oppdatert til:</p>
-    <p style="margin:0 0 12px; font-size:18px;"><strong>${escapeHtml(statusLabel(newStatus))}</strong></p>
+    <p style="margin:0 0 12px;">${escapeHtml(statusLine)}</p>
     <p style="margin:0;">Ordre: #${escapeHtml(orderNo)}</p>
   </div>`.trim()
 
