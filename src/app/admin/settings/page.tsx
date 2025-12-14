@@ -6,6 +6,8 @@ import { Loader2, Save, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
+export const runtime = 'edge'
+
 export default function SettingsPage() {
   const [customRequestEmail, setCustomRequestEmail] = useState('')
 

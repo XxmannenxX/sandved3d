@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Loader2, Send, Wand2 } from 'lucide-react'
 
+export const runtime = 'edge'
+
 export default function CustomRequestPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)

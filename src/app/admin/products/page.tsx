@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader2, Plus, Image as ImageIcon, Pencil, ArrowUp, ArrowDown, Save, X, Archive } from 'lucide-react'
 import { Database } from '@/types/supabase'
 
+export const runtime = 'edge'
+
 type Product = Database['public']['Tables']['products']['Row']
 
 function slugify(input: string) {
