@@ -3,18 +3,10 @@ import SearchableProductGrid from '@/components/SearchableProductGrid'
 import HeroSection from '@/components/HeroSection'
 
 export const runtime = 'edge'
-
-export const revalidate = 60 // Revalidate every minute
+export const revalidate = 60
 
 export default async function Home() {
   const supabase = await createClient()
-  
-  // Try to fetch with display_order if it exists, otherwise fall back to created_at
-  // Since we can't conditionally select in the query builder easily without risking error,
-  // we'll just try to select * and order by created_at for now, 
-  // and let the user run the migration.
-  // If the column exists, we can update this query later.
-  // For now, stick to created_at to avoid breakage until migration is run.
   
   const { data: products } = await supabase
     .from('products')
@@ -26,14 +18,16 @@ export default async function Home() {
     <div className="min-h-screen">
       <HeroSection />
 
+      {/* Featured Categories / Stats or Benefits could go here */}
+
       {/* Products Section */}
-      <section id="products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20 sm:pt-8">
-        <div className="flex items-end justify-between gap-4 mb-6">
+      <section id="products" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Alle produkter</h2>
-            <p className="text-muted-foreground mt-2">Søk og filtrer etter kategori.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-white">Våre Produkter</h2>
           </div>
         </div>
+        
         <SearchableProductGrid products={products || []} />
       </section>
     </div>

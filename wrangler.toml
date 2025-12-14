@@ -5,6 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 # Cloudflare Pages configuration
 pages_build_output_dir = ".vercel/output/static"
 
-
-
-
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://xeqkyzmduhmrrywqgsic.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlcWt5em1kdWhtcnJ5d3Fnc2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NjA4NjAsImV4cCI6MjA3OTEzNjg2MH0.zXQzLKjNs0GrpfzWtjf-xjJRj0d4bAqftKPKQFNgQLs"

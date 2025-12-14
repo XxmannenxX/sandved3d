@@ -52,7 +52,7 @@ export default function RootLayout({
             - Using distinct lines
         */}
         <div 
-          className="fixed inset-0 -z-40 opacity-20 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:24px_24px]"
+          className="fixed inset-0 -z-40 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:24px_24px]"
           style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)' }}
         />
 

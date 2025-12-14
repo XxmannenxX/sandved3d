@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "pages:build": "npx @cloudflare/next-on-pages",
-    "cf-build": "npm run build && npm run pages:build"
+    "cf-build": "npm run build && npm run pages:build",
+    "deploy": "npm run cf-build && wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -22,6 +23,7 @@
     "resend": "^6.5.1",
     "tailwindcss-animate": "^1.0.7",
     "use-debounce": "^10.0.6",
+    "wrangler": "^4.54.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
